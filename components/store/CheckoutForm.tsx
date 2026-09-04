@@ -139,15 +139,27 @@ export function CheckoutForm(props: {
       <div className="grid gap-8">
         <section className="grid gap-4">
           <h2 className="text-lg font-medium">Contact</h2>
-          <Field label="Your name" error={err('customerName')}>
-            <Input autoComplete="name" {...f('customerName')} />
+          <Field id="customerName" label="Your name" error={err('customerName')}>
+            <Input autoComplete="name" id="customerName" {...f('customerName')} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" error={err('customerEmail')} hint="Receipt goes here">
-              <Input type="email" autoComplete="email" inputMode="email" {...f('customerEmail')} />
+            <Field id="customerEmail" label="Email" error={err('customerEmail')} hint="Receipt goes here">
+              <Input
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                id="customerEmail"
+                {...f('customerEmail')}
+              />
             </Field>
-            <Field label="Phone" error={err('customerPhone')}>
-              <Input type="tel" autoComplete="tel" inputMode="tel" {...f('customerPhone')} />
+            <Field id="customerPhone" label="Phone" error={err('customerPhone')}>
+              <Input
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                id="customerPhone"
+                {...f('customerPhone')}
+              />
             </Field>
           </div>
         </section>
@@ -162,6 +174,7 @@ export function CheckoutForm(props: {
                 type="radio"
                 value="classroom"
                 disabled={!props.classrooms.length}
+                id="fulfillment-classroom"
                 {...f('fulfillmentMethod')}
                 className="mt-1"
               />
@@ -179,6 +192,7 @@ export function CheckoutForm(props: {
                 type="radio"
                 value="pickup"
                 disabled={!props.events.length}
+                id="fulfillment-pickup"
                 {...f('fulfillmentMethod')}
                 className="mt-1"
               />
@@ -190,10 +204,11 @@ export function CheckoutForm(props: {
           </div>
           {method === 'classroom' ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Teacher" error={err('classroomId')}>
+              <Field id="classroomId" label="Teacher" error={err('classroomId')}>
                 <select
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                   defaultValue=""
+                  id="classroomId"
                   {...f('classroomId')}
                 >
                   <option value="" disabled>
@@ -206,15 +221,16 @@ export function CheckoutForm(props: {
                   ))}
                 </select>
               </Field>
-              <Field label="Student's name" error={err('studentName')}>
-                <Input autoComplete="off" {...f('studentName')} />
+              <Field id="studentName" label="Student's name" error={err('studentName')}>
+                <Input autoComplete="off" id="studentName" {...f('studentName')} />
               </Field>
             </div>
           ) : (
-            <Field label="Event" error={err('pickupEventId')}>
+            <Field id="pickupEventId" label="Event" error={err('pickupEventId')}>
               <select
                 className="h-9 rounded-md border bg-background px-3 text-sm"
                 defaultValue=""
+                id="pickupEventId"
                 {...f('pickupEventId')}
               >
                 <option value="" disabled>
@@ -233,19 +249,19 @@ export function CheckoutForm(props: {
               In-stock items arrive first; pre-ordered items follow after the pre-order window closes.
             </p>
           )}
-          <Field label="Notes (optional)" error={err('notes')}>
-            <Textarea rows={2} {...f('notes')} />
+          <Field id="notes" label="Notes (optional)" error={err('notes')}>
+            <Textarea rows={2} id="notes" {...f('notes')} />
           </Field>
         </section>
 
         <section className="grid gap-4">
           <h2 className="text-lg font-medium">Payment</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name on card" error={err('nameOnCard')}>
-              <Input autoComplete="cc-name" {...f('nameOnCard')} />
+            <Field id="nameOnCard" label="Name on card" error={err('nameOnCard')}>
+              <Input autoComplete="cc-name" id="nameOnCard" {...f('nameOnCard')} />
             </Field>
-            <Field label="Billing ZIP" error={err('billingZip')}>
-              <Input autoComplete="postal-code" inputMode="numeric" {...f('billingZip')} />
+            <Field id="billingZip" label="Billing ZIP" error={err('billingZip')}>
+              <Input autoComplete="postal-code" inputMode="numeric" id="billingZip" {...f('billingZip')} />
             </Field>
           </div>
           <RunnerCardFields
@@ -307,11 +323,13 @@ export function CheckoutForm(props: {
 }
 
 function Field({
+  id,
   label,
   hint,
   error,
   children,
 }: {
+  id: string;
   label: string;
   hint?: string;
   error?: string;
@@ -319,7 +337,7 @@ function Field({
 }) {
   return (
     <div className="grid gap-1.5">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       {children}
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
