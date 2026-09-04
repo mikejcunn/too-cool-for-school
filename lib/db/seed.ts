@@ -274,15 +274,13 @@ async function main() {
       .insert(allocationRules)
       .values({ orgId: org.id, productId: null, name: 'Org default' })
       .returning();
-    await db
-      .insert(allocationRuleSplits)
-      .values({
-        ruleId: rule.id,
-        beneficiaryId: bens['general-fund'],
-        kind: 'percent',
-        percentBps: 10000,
-        position: 0,
-      });
+    await db.insert(allocationRuleSplits).values({
+      ruleId: rule.id,
+      beneficiaryId: bens['general-fund'],
+      kind: 'percent',
+      percentBps: 10000,
+      position: 0,
+    });
   }
   const [hoodieRule] = await db
     .select()

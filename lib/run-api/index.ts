@@ -52,10 +52,50 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
  * otherwise, including declines.
  */
 export function charge(body: ChargeBody): Promise<ChargeResponse> {
+  if (mockEnabled()) return mockCharge(body);
   return postJson<ChargeResponse>('/charge', { capture: 'Y', currency: 'USD', ...body });
 }
 
 /** Void (unsettled) or refund (settled) a prior transaction; Javelin decides which. */
 export function voidOrRefund(body: VoidOrRefundBody): Promise<VoidOrRefundResponse> {
+  if (mockEnabled()) return mockVoidOrRefund(body);
   return postJson<VoidOrRefundResponse>('/void-or-refund', body);
+}
+
+// ─── Dev-only mock gateway ─────────────────────────────────────────────────────
+// RUN_MOCK_GATEWAY=true (never honoured in production). Tokens starting with
+// "mock_decline" are declined; "mock_error" throws like a network failure; anything
+// else is approved. Lets local dev and e2e run without Run UAT credentials.
+export function mockEnabled(): boolean {
+  return process.env.RUN_MOCK_GATEWAY === 'true' && process.env.NODE_ENV !== 'production';
+}
+
+async function mockCharge(body: ChargeBody): Promise<ChargeResponse> {
+  await new Promise((r) => setTimeout(r, 150));
+  if (body.account_token.startsWith('mock_error')) throw new RunApiError('mock network failure');
+  const declined = body.account_token.startsWith('mock_decline');
+  const last4 = body.account_token.replace(/\D/g, '').slice(-4) || '4242';
+  return {
+    result: declined ? 'C' : 'A',
+    trans_id: declined ? null : `mock-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
+    resp_code: declined ? '051' : '000',
+    resp_text: declined ? 'Insufficient funds (mock)' : 'Approval (mock)',
+    amount: body.amount,
+    authcode: declined ? null : 'MOCK01',
+    card_number: `9${'x'.repeat(11)}${last4}`,
+    card_type: 'VISA',
+    avs_resp: 'Y',
+    cvv_resp: 'M',
+  };
+}
+
+async function mockVoidOrRefund(body: VoidOrRefundBody): Promise<VoidOrRefundResponse> {
+  await new Promise((r) => setTimeout(r, 100));
+  return {
+    result: 'A',
+    trans_id: `mock-refund-${Date.now()}`,
+    resp_code: '000',
+    resp_text: 'Approval (mock)',
+    amount: body.amount ?? null,
+  };
 }
