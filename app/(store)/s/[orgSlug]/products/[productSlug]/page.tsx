@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { requireOrg } from '@/lib/tenant/context';
-import { getActiveProductBySlug, preorderOpen } from '@/lib/catalog/queries';
+import { getActiveProductBySlug, preorderOpen, preorderState } from '@/lib/catalog/queries';
 import { AddToCart } from '@/components/store/AddToCart';
 import { Price } from '@/components/store/Price';
 
@@ -68,6 +68,11 @@ export default async function ProductPage({
                       .
                     </>
                   )}
+                </>
+              ) : preorderState(product) === 'upcoming' ? (
+                <>
+                  Pre-orders open <strong>{fmt(product.window.opensAt)}</strong> and close{' '}
+                  <strong>{fmt(product.window.closesAt)}</strong>.
                 </>
               ) : (
                 <>Pre-orders for this item are closed.</>

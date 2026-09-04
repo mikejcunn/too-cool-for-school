@@ -129,6 +129,16 @@ export async function listPreorderWindows(orgId: string): Promise<PreorderWindow
     .orderBy(asc(preorderWindows.closesAt));
 }
 
+/** 'upcoming' | 'open' | 'closed' | null (not a pre-order product). */
+export function preorderState(p: ProductView, now = new Date()): 'upcoming' | 'open' | 'closed' | null {
+  if (p.saleMode !== 'preorder') return null;
+  const w = p.window;
+  if (!w || w.status === 'cancelled' || (w.status !== 'draft' && w.status !== 'open')) return 'closed';
+  if (now < w.opensAt) return 'upcoming';
+  if (w.status === 'open' && now <= w.closesAt) return 'open';
+  return 'closed';
+}
+
 /** Is this pre-order product currently orderable? */
 export function preorderOpen(p: ProductView, now = new Date()): boolean {
   if (p.saleMode !== 'preorder') return false;
