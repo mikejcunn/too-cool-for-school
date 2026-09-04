@@ -1,14 +1,26 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Boxes, ClipboardList, LayoutDashboard, Settings, ShoppingBag, Store, Tag } from 'lucide-react';
+import {
+  Boxes,
+  CalendarDays,
+  ClipboardList,
+  LayoutDashboard,
+  PackageCheck,
+  Settings,
+  ShoppingBag,
+  Store,
+  Tag,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
   { href: '', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/orders', label: 'Orders', icon: ClipboardList },
+  { href: '/fulfillment', label: 'Fulfillment', icon: PackageCheck },
   { href: '/products', label: 'Products', icon: Tag },
   { href: '/inventory', label: 'Inventory', icon: Boxes },
+  { href: '/events', label: 'Events', icon: CalendarDays },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
