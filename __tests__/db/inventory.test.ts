@@ -1,6 +1,6 @@
 /* DB integration tests. Require DATABASE_URL (docker compose up -d db && pnpm db:migrate). */
-import { beforeAll, describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { eq, like } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { organizations, productVariants, products } from '@/lib/db/schema';
 import {
@@ -35,6 +35,11 @@ d('inventory (db)', () => {
     await db.transaction((tx) =>
       receiveStock(tx, { orgId, variantId, quantity: 5, note: 'test' }).then(() => undefined)
     );
+  });
+
+  afterAll(async () => {
+    // Cascade deletes products/variants/movements for the throwaway orgs.
+    await db.delete(organizations).where(like(organizations.slug, 'test-%'));
   });
 
   it('exactly N parallel reservations succeed against on_hand=N', async () => {
