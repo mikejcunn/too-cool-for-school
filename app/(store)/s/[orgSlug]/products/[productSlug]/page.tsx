@@ -84,6 +84,7 @@ export default async function ProductPage({
             variants={product.variants}
             isPreorder={isPre}
             orderable={orderable}
+            unavailableLabel={preorderState(product) === 'upcoming' ? 'Not open yet' : undefined}
           />
         </div>
       </div>

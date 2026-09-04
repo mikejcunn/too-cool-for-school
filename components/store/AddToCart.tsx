@@ -13,11 +13,13 @@ export function AddToCart({
   variants,
   isPreorder,
   orderable,
+  unavailableLabel,
 }: {
   orgSlug: string;
   variants: VariantView[];
   isPreorder: boolean;
   orderable: boolean;
+  unavailableLabel?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -133,9 +135,7 @@ export function AddToCart({
         </div>
         <Button type="button" className="flex-1" size="lg" disabled={!canAdd} onClick={add}>
           {!orderable
-            ? isPreorder
-              ? 'Pre-orders closed'
-              : 'Unavailable'
+            ? (unavailableLabel ?? (isPreorder ? 'Pre-orders closed' : 'Unavailable'))
             : soldOut
               ? 'Sold out'
               : isPreorder
