@@ -51,6 +51,7 @@ Magic-link logins print to the dev server console when `AUTH_DEV_LOG_LINKS=true`
 ## Where knowledge lives
 
 - `docs/adr/` — decisions and why (0001 stack, 0002 inventory model, 0003 tenancy). Superseded, never rewritten.
+- `docs/next-steps.md` — **the living status doc**: where we are, what is next, pick-up prompt. Update it before stopping.
 - `docs/checklists.md` — manual verification per phase.
 - Plan of record: `~/.claude/plans/inventory-management-between-online-warm-valiant.md` (Mike's machine).
 - Run API reference: `../dev-docs/fern/apis/payments/swagger.yml` and `../dev-docs/fern/docs/pages/guides/`.
