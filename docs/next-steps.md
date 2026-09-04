@@ -5,42 +5,36 @@ end of every working session.
 
 ## Where we are
 
-**Phase 0 — done. Phase 1 (MVP) — done and smoke-tested. Phase 2 (POS + tenders + events) — done and
-smoke-tested (session 2, 2026-09-04).** Repo: https://github.com/mikejcunn/too-cool-for-school (`main`).
+**Phases 0–4 are built and pushed** (session 2, 2026-09-04). Repo: https://github.com/mikejcunn/too-cool-for-school.
 
-Verified in the browser with the mock gateway:
+Smoke-tested in the browser with the mock gateway: storefront checkout incl. decline + retry; admin
+dashboard/orders/order detail/mark fulfilled/partial refund/products edit/inventory receive/verify ledger;
+POS cash sale + close register; pre-order window list + detail; events; fulfillment board; allocations
+editor (per-product override with live preview). 39 vitest tests pass (unit + DB incl. saveProduct and the
+pre-order → PO → receive flow).
 
-- Storefront checkout, decline + retry (superseded pending order is cancelled and its hold released).
-- Admin: dashboard, orders, order detail, mark fulfilled, partial refund, products list/edit/save,
-  inventory receive + verify ledger, settings render.
-- POS: open register (event + starting cash) → tap items (variant picker for multi-option products) →
-  cash tender with quick amounts and change due → order W-1003 recorded as `channel=pos`, `in_person`,
-  fulfilled, cash payment with "tendered 50.00", stock decremented, $20 margin allocated → close register
-  records counted cash (35.00 vs 33.00 expected).
-- 36 vitest tests pass.
+Written, compiles, not yet clicked through: POS card/Venmo/check tenders and a POS sale with a pre-order
+item; events dialog; fulfillment bulk-mark + print; Adjust-stock dialog; settings save; team member add;
+new pre-order window dialog; create-PO / receive-PO pages; reports page + CSV; beneficiaries page.
+Resend not configured (emails logged as `skipped`).
 
-Written, compiles, but not yet exercised by hand: POS card / Venmo / check tenders, POS sale containing a
-pre-order item (forces classroom/pickup fields), events CRUD dialog, fulfillment board (bulk mark + print),
-Adjust-stock dialog, settings save, team member add. Resend is not configured (receipts logged as `skipped`).
+## Next session — Phase 5 (multi-tenant + hardening) and launch prep
 
-## Next session — Phase 3 (pre-orders + purchase orders), then Phase 4
-
-1. **Smoke-test what Phase 2 left untested** (list above), fixing as you go. Card tender at POS uses the
-   same mock (`…0000` declines).
-2. **Pre-order windows CRUD** (`admin/[orgSlug]/preorders`): name, opens/closes, status
-   (draft/open/closed/…), expected delivery. Products already reference `preorder_window_id`.
-3. **Window detail page**: demand by variant = `sum(order_lines.quantity - refunded_quantity)` for paid
-   lines in the window; "Close window" (manual + `api/cron/close-preorder-windows` when `closes_at` passes);
-   **"Create purchase order"** → `purchase_orders` + `purchase_order_lines` (qty = demand, unit cost =
-   variant COGS), CSV export for the vendor.
-4. **Receive PO** (`admin/[orgSlug]/purchase-orders/[poId]`): per-line received qty → `receiveStock`
-   (`receive`) then `receiveStock(type='preorder_fill', negative backlog)` so surplus stays on hand; window →
-   `received`; pre-order lines become fulfillable on the fulfillment board (they already appear there).
-5. **Pre-order status emails** (`lib/email/templates/preorder-update.tsx`): window closed / items arrived.
-6. **Phase 4**: beneficiaries CRUD + `AllocationEditor` (org default + per-product, percent + fixed,
-   live preview), reports page (beneficiary earnings by date range, sales by product, tender summary per
-   POS session, COGS/margin), CSV exports.
-7. Commit after each step, push, update this file before stopping.
+1. **Click through the untested list above**, fixing as you go.
+2. **Run webhook receiver** `app/api/webhooks/run/route.ts`: verify signature if Run provides one (check
+   `dev-docs/fern/docs/pages/guides/webhooks/overview.mdx`), dedupe on `metadata.idempotency_key` via
+   `webhook_events`, and resolve payments in `unknown` by matching `payload.order_id` (we send
+   `order_number`) / `trans_id`: approved → run the settle path; declined → mark declined and release.
+3. **Admin "Resolve payment"** on order detail for `unknown` payments (mark approved with trans_id, or
+   declined) — the human backstop; plus a cron `reconcile-pending-payments` that re-settles payments stuck
+   in `pending` with a stored `raw_response`.
+4. **Platform admin**: `/platform/orgs` (create org: name, slug, first admin email → membership), gated by
+   `users.is_platform_admin`.
+5. **Audit log UI** (`admin/[orgSlug]/audit`), **student-name purge** cron (null `student_name` on orders
+   fulfilled > 90 days ago), rate limit on `placeOrderAction` (per IP/session), Sentry.
+6. **Launch prep**: UAT credentials in `.env.local` → `pnpm db:seed` → one $1.23 charge to settle
+   `RUN_AMOUNT_UNITS`; Resend domain + `RESEND_API_KEY`; reCAPTCHA keys; Vercel project + Neon DB +
+   env vars + crons (`vercel.json`); real product photos (image URL field) and copy.
 
 ## Known issues / notes
 
@@ -61,7 +55,7 @@ Adjust-stock dialog, settings save, team member add. Resend is not configured (r
 ## Pick-up prompt (paste this to resume)
 
 > Continue the Winthrop project in `/Users/mike/run-projects/winthrop`. Read `CLAUDE.md`, then
-> `docs/next-steps.md`, and follow its "Next session — Phase 3" list in order. Plan of record:
+> `docs/next-steps.md`, and follow its "Next session — Phase 5" list in order. Plan of record:
 > `~/.claude/plans/inventory-management-between-online-warm-valiant.md`. Start with
 > `docker compose up -d db && pnpm dev`; log in via the console magic link. Commit after each numbered
 > step, push to origin, and update `docs/next-steps.md` before stopping.
