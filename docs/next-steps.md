@@ -20,6 +20,11 @@ Resend not configured (emails logged as `skipped`).
 
 ## Next session — launch prep and polish
 
+**Demo mode is on by default** (`DEMO_MODE=true`, `NEXT_PUBLIC_DEMO_MODE=true` in `.env.example`/`.env.local`):
+simulated charges, no reCAPTCHA, amber banner, one-click admin sign-in on `/login`. Deploying the repo as-is to
+Vercel gives a safe hosted demo for design/functionality review. Set both to `false` only when real Run
+credentials are in place.
+
 Phase 5 shipped: Run webhook receiver (`/api/webhooks/run`, HMAC `X-Webhook-Signature-256`, dedupe via
 `webhook_events`), admin **Resolve payment** dialog for pending/unknown payments, `reconcile-pending-payments`
 cron, `/platform/orgs` (create a school with first admin), audit log page, `purge-student-names` cron.
