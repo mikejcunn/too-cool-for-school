@@ -108,6 +108,8 @@ export async function refundOrder(input: RefundInput): Promise<RefundResult> {
       if (amountCents <= 0)
         throw new RefundError({ ok: false, code: 'NOT_REFUNDABLE', message: 'Nothing left to refund.' });
 
+      // Restocking only makes sense when whole units come back.
+      const restock = input.restock && unitsByLine.size > 0;
       const [r] = await tx
         .insert(refunds)
         .values({
@@ -116,7 +118,7 @@ export async function refundOrder(input: RefundInput): Promise<RefundResult> {
           paymentId: payment.id,
           amountCents,
           reason: input.reason ?? null,
-          restock: input.restock,
+          restock,
           status: 'pending',
           tender: payment.tender,
           createdBy: input.actorUserId,
