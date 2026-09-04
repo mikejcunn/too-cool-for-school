@@ -1,7 +1,8 @@
 /* DB integration tests for lib/catalog/save-product. Require DATABASE_URL. */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eq, like } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
+import { cleanupTestOrgs } from '@/__tests__/helpers';
 import { inventoryMovements, organizations, productVariants, products, users } from '@/lib/db/schema';
 import { saveProduct } from '@/lib/catalog/save-product';
 
@@ -26,10 +27,7 @@ d('saveProduct (db)', () => {
     userId = u.id;
   });
 
-  afterAll(async () => {
-    await db.delete(organizations).where(like(organizations.slug, 'test-%'));
-    await db.delete(users).where(like(users.email, 'test-prod-%'));
-  });
+  afterAll(cleanupTestOrgs);
 
   const base = {
     name: 'Test Hoodie',

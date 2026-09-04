@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Store,
   Tag,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ const items = [
   { href: '/fulfillment', label: 'Fulfillment', icon: PackageCheck },
   { href: '/products', label: 'Products', icon: Tag },
   { href: '/inventory', label: 'Inventory', icon: Boxes },
+  { href: '/preorders', label: 'Pre-orders', icon: Clock },
   { href: '/events', label: 'Events', icon: CalendarDays },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
