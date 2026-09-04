@@ -5,45 +5,42 @@ end of every working session.
 
 ## Where we are
 
-**Phase 0 (scaffold) — done.** **Phase 1 (MVP) — done and smoke-tested (session 2, 2026-09-04).**
-Repo: https://github.com/mikejcunn/too-cool-for-school (branch `main`).
+**Phase 0 — done. Phase 1 (MVP) — done and smoke-tested. Phase 2 (POS + tenders + events) — done and
+smoke-tested (session 2, 2026-09-04).** Repo: https://github.com/mikejcunn/too-cool-for-school (`main`).
 
-Verified in the browser against the local dev server with the mock gateway:
+Verified in the browser with the mock gateway:
 
-- Storefront: catalog → product → cart → checkout → confirmation (orders W-1000, W-1002). Decline path
-  shows "Card not approved" and keeps the cart reserved; a retry cancels the superseded pending order
-  (W-1001), releases its hold, and succeeds.
-- Admin (magic-link login works; link prints in the dev console): dashboard, orders list + filters, order
-  detail, **mark fulfilled**, **partial refund** ($5 of W-1000 → status partially refunded, negative
-  allocation entry, ledger untouched), products list, **product edit/save**, **inventory receive** (+5 →
-  ledger row), **verify ledger** (23/23 match), settings page renders (org, classrooms, team).
-- Tests: 36 vitest tests (unit + DB, incl. saveProduct) pass; DB tests tear down their orgs.
+- Storefront checkout, decline + retry (superseded pending order is cancelled and its hold released).
+- Admin: dashboard, orders, order detail, mark fulfilled, partial refund, products list/edit/save,
+  inventory receive + verify ledger, settings render.
+- POS: open register (event + starting cash) → tap items (variant picker for multi-option products) →
+  cash tender with quick amounts and change due → order W-1003 recorded as `channel=pos`, `in_person`,
+  fulfilled, cash payment with "tendered 50.00", stock decremented, $20 margin allocated → close register
+  records counted cash (35.00 vs 33.00 expected).
+- 36 vitest tests pass.
 
-Not yet exercised by hand: creating a brand-new product through the form (covered by DB tests), the
-Adjust dialog, settings save, adding a team member. Resend is not configured, so receipts are logged
-with status `skipped`.
+Written, compiles, but not yet exercised by hand: POS card / Venmo / check tenders, POS sale containing a
+pre-order item (forces classroom/pickup fields), events CRUD dialog, fulfillment board (bulk mark + print),
+Adjust-stock dialog, settings save, team member add. Resend is not configured (receipts logged as `skipped`).
 
-## Next session — Phase 2 (POS + tenders + events)
+## Next session — Phase 3 (pre-orders + purchase orders), then Phase 4
 
-1. **Events CRUD** in admin (`admin/[orgSlug]/events`): name, starts/ends, location, kind
-   (pickup | sale | both), active. Storefront pickup dropdown already reads `events`.
-2. **POS session model + screens** under `app/(pos)/pos/[orgSlug]/`: `page.tsx` opens/resumes a
-   `pos_sessions` row (pick event, starting cash); `[posSessionId]/page.tsx` renders `<PosApp/>`:
-   touch-first product grid (stock items with available counts; pre-order items allowed but force
-   classroom/pickup fields), cart, tender sheet with **cash / Venmo / check / card**.
-3. **`lib/checkout/pos-order.ts` → `placePosOrder()`**: reuse `stageOrder`-style reservation (5-min TTL,
-   `channel='pos'`, `fulfillmentMethod='in_person'`, stock lines fulfilled immediately). Card tender uses
-   the same `charge()` + settle path (`com_ind` still `E` until Run confirms); cash/Venmo/check collapse
-   stage+settle into one transaction with `payments.reference` and `received_by`. Email/phone optional;
-   send a receipt when an email is given. Refactor `place-order.ts` so the shared pieces
-   (`stageOrder` internals, `settle`, `upsertCustomer`) are importable rather than duplicated.
-4. **Close session**: summary of tenders, expected cash = starting + cash sales − cash refunds, record
-   counted cash + notes.
-5. **Fulfillment page** (`admin/[orgSlug]/fulfillment`): paid orders grouped by classroom (teacher →
-   students) and by pickup event, bulk "mark delivered", printable view.
-6. **Non-card refunds** already work in `refundOrder` (no gateway call); confirm the refund dialog copy
-   for cash/Venmo.
-7. Commit after each step; update this file before stopping.
+1. **Smoke-test what Phase 2 left untested** (list above), fixing as you go. Card tender at POS uses the
+   same mock (`…0000` declines).
+2. **Pre-order windows CRUD** (`admin/[orgSlug]/preorders`): name, opens/closes, status
+   (draft/open/closed/…), expected delivery. Products already reference `preorder_window_id`.
+3. **Window detail page**: demand by variant = `sum(order_lines.quantity - refunded_quantity)` for paid
+   lines in the window; "Close window" (manual + `api/cron/close-preorder-windows` when `closes_at` passes);
+   **"Create purchase order"** → `purchase_orders` + `purchase_order_lines` (qty = demand, unit cost =
+   variant COGS), CSV export for the vendor.
+4. **Receive PO** (`admin/[orgSlug]/purchase-orders/[poId]`): per-line received qty → `receiveStock`
+   (`receive`) then `receiveStock(type='preorder_fill', negative backlog)` so surplus stays on hand; window →
+   `received`; pre-order lines become fulfillable on the fulfillment board (they already appear there).
+5. **Pre-order status emails** (`lib/email/templates/preorder-update.tsx`): window closed / items arrived.
+6. **Phase 4**: beneficiaries CRUD + `AllocationEditor` (org default + per-product, percent + fixed,
+   live preview), reports page (beneficiary earnings by date range, sales by product, tender summary per
+   POS session, COGS/margin), CSV exports.
+7. Commit after each step, push, update this file before stopping.
 
 ## Known issues / notes
 
@@ -64,7 +61,7 @@ with status `skipped`.
 ## Pick-up prompt (paste this to resume)
 
 > Continue the Winthrop project in `/Users/mike/run-projects/winthrop`. Read `CLAUDE.md`, then
-> `docs/next-steps.md`, and follow its "Next session — Phase 2" list in order. Plan of record:
+> `docs/next-steps.md`, and follow its "Next session — Phase 3" list in order. Plan of record:
 > `~/.claude/plans/inventory-management-between-online-warm-valiant.md`. Start with
 > `docker compose up -d db && pnpm dev`; log in via the console magic link. Commit after each numbered
 > step, push to origin, and update `docs/next-steps.md` before stopping.

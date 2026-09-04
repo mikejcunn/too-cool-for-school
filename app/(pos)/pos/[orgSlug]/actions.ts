@@ -74,7 +74,8 @@ export async function closePosSessionAction(
   });
   const summary = await getPosSummary(org.id, posSessionId);
   if (!summary) return { ok: false, message: 'Session not found' };
-  revalidatePath(`/pos/${orgSlug}`);
+  // No revalidatePath here: refreshing the (now closed) session page would redirect
+  // away before the volunteer sees the summary. The Done button navigates instead.
   return { ok: true, summary };
 }
 
