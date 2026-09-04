@@ -12,6 +12,8 @@ import {
   Store,
   Tag,
   Clock,
+  BarChart3,
+  HandCoins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +25,8 @@ const items = [
   { href: '/inventory', label: 'Inventory', icon: Boxes },
   { href: '/preorders', label: 'Pre-orders', icon: Clock },
   { href: '/events', label: 'Events', icon: CalendarDays },
+  { href: '/allocations', label: 'Allocations', icon: HandCoins },
+  { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

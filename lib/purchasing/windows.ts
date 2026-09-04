@@ -239,16 +239,14 @@ export async function createPurchaseOrderFromWindow(
         createdBy: actorUserId,
       })
       .returning({ id: purchaseOrders.id });
-    await tx
-      .insert(purchaseOrderLines)
-      .values(
-        needed.map((d) => ({
-          poId: po.id,
-          variantId: d.variantId,
-          quantityOrdered: d.qty,
-          unitCostCents: d.unitCogsCents,
-        }))
-      );
+    await tx.insert(purchaseOrderLines).values(
+      needed.map((d) => ({
+        poId: po.id,
+        variantId: d.variantId,
+        quantityOrdered: d.qty,
+        unitCostCents: d.unitCogsCents,
+      }))
+    );
     if (detail.window.status === 'open' || detail.window.status === 'closed') {
       await tx.update(preorderWindows).set({ status: 'ordered' }).where(eq(preorderWindows.id, windowId));
     }
