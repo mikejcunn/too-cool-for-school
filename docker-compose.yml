@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: winthrop-db
+    environment:
+      POSTGRES_USER: winthrop
+      POSTGRES_PASSWORD: winthrop
+      POSTGRES_DB: winthrop
+    ports:
+      - '5433:5432'
+    volumes:
+      - winthrop-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U winthrop -d winthrop']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  winthrop-pgdata:
