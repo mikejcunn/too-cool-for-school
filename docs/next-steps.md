@@ -1,60 +1,49 @@
 # Next steps (living status doc)
 
-Last updated: 2026-09-03, end of session 1. This file is the authoritative "where are we"; update it at the
+Last updated: 2026-09-04, session 2. This file is the authoritative "where are we"; update it at the
 end of every working session.
 
 ## Where we are
 
-**Phase 0 (scaffold) — done, committed.** Next.js 15 + Drizzle/Neon-ready Postgres schema (31 tables), Auth.js
-magic link, Run Payments client + Runner.js hook, oversell-proof inventory functions, allocation math,
-seed data, vitest unit + DB tests (31 passing), CI workflow, ADRs, `CLAUDE.md`.
+**Phase 0 (scaffold) — done.** **Phase 1 (MVP) — done and smoke-tested (session 2, 2026-09-04).**
+Repo: https://github.com/mikejcunn/too-cool-for-school (branch `main`).
 
-**Phase 1 (MVP) — storefront half done and verified; admin half in progress.**
+Verified in the browser against the local dev server with the mock gateway:
 
-Working end to end (verified in the browser against the local dev server with the mock gateway):
+- Storefront: catalog → product → cart → checkout → confirmation (orders W-1000, W-1002). Decline path
+  shows "Card not approved" and keeps the cart reserved; a retry cancels the superseded pending order
+  (W-1001), releases its hold, and succeeds.
+- Admin (magic-link login works; link prints in the dev console): dashboard, orders list + filters, order
+  detail, **mark fulfilled**, **partial refund** ($5 of W-1000 → status partially refunded, negative
+  allocation entry, ledger untouched), products list, **product edit/save**, **inventory receive** (+5 →
+  ledger row), **verify ledger** (23/23 match), settings page renders (org, classrooms, team).
+- Tests: 36 vitest tests (unit + DB, incl. saveProduct) pass; DB tests tear down their orgs.
 
-- Storefront catalog → product page (color/size picker) → cart → checkout (contact, classroom/pickup,
-  card) → order confirmation. Order `W-1000` was placed: stock 12→11 with reserve→sale ledger rows,
-  $11.00 margin allocated to General Fund, session completed, receipt logged (Resend not configured),
-  audit row written.
-- Server libs: `lib/checkout/place-order.ts` (reserve → charge → settle, idempotent), `refund.ts`,
-  `release-expired.ts` + cron route, `cart.ts`, allocation rules/entries, catalog + order queries,
-  receipt email template, dev-only mock gateway (`RUN_MOCK_GATEWAY=true`).
+Not yet exercised by hand: creating a brand-new product through the form (covered by DB tests), the
+Adjust dialog, settings save, adding a team member. Resend is not configured, so receipts are logged
+with status `skipped`.
 
-Written but **not yet rendered or smoke-tested** (typecheck + lint pass):
+## Next session — Phase 2 (POS + tenders + events)
 
-- Admin layout/nav, dashboard, orders list + filters, order detail (items, payments, refunds,
-  beneficiary breakdown), mark-fulfilled button, refund dialog (full / by line / custom amount, restock).
-- Products list page (read-only).
-
-## Next session — do these in order
-
-1. **Smoke-test the admin.** `pnpm dev`, open `/login`, enter `mike@runpayments.io`; the magic link prints in
-   the dev-server console (`AUTH_DEV_LOG_LINKS=true`). Visit `/admin/friends-of-winthrop`, check dashboard,
-   orders list, order `W-1000` detail. Try **Mark fulfilled** and a **partial refund** (mock gateway
-   approves) and confirm: order status `partially_refunded`, `return` movement if restock, negative
-   `allocation_entries`.
-2. **Products: new/edit form + actions.** `app/admin/[orgSlug]/products/new/page.tsx`,
-   `products/[productId]/page.tsx`, `products/actions.ts` (zod: name, slug auto, description, category,
-   status, saleMode + preorderWindowId, priceCents/cogsCents/msrpCents via `parseDollarsToCents`).
-   `components/admin/ProductForm.tsx` with a size × color **VariantMatrix** that generates SKUs and
-   labels; per-variant price/COGS/MSRP overrides; initial on-hand for *new* variants only (writes a
-   `receive` movement via `lib/inventory/receive.ts`). Image URL field for now (Vercel Blob later).
-   Archive = status `archived` (never delete; order lines reference variants).
-3. **Inventory page.** `admin/[orgSlug]/inventory/page.tsx`: variants grouped by product with on-hand /
-   reserved / available / low-stock badge; **Receive** and **Adjust** dialogs → server actions calling
-   `receiveStock` / `adjustStock` inside `db.transaction`; `inventory/ledger/page.tsx` listing
-   `inventory_movements`; a **Verify ledger** button calling `reconcileInventory`.
-4. **Settings page.** Org profile (name, short name, contact email, brand color, logo URL), Run MID +
-   public key, allocation basis, tax bps; **classrooms** CRUD; **team**: add member by email (creates the
-   `users` row if needed + `memberships` row) so volunteers can log in. Admin-only mutations
-   (`requireMember(slug, 'admin')`).
-5. **Storefront polish.** Exercise the decline path in the browser (mock card ending `0000` → "Card not
-   approved", session stays `reserved` for 10 more minutes) and the network-failure path (`9999` →
-   payment `unknown`). Show "Opens <date>" instead of "Pre-order closed" for windows that have not
-   opened yet (`components/store/ProductCard.tsx`, product page).
-6. **Commit, then move to Phase 2** (POS mode, cash/Venmo/check tenders, events, fulfillment page) per
-   the plan.
+1. **Events CRUD** in admin (`admin/[orgSlug]/events`): name, starts/ends, location, kind
+   (pickup | sale | both), active. Storefront pickup dropdown already reads `events`.
+2. **POS session model + screens** under `app/(pos)/pos/[orgSlug]/`: `page.tsx` opens/resumes a
+   `pos_sessions` row (pick event, starting cash); `[posSessionId]/page.tsx` renders `<PosApp/>`:
+   touch-first product grid (stock items with available counts; pre-order items allowed but force
+   classroom/pickup fields), cart, tender sheet with **cash / Venmo / check / card**.
+3. **`lib/checkout/pos-order.ts` → `placePosOrder()`**: reuse `stageOrder`-style reservation (5-min TTL,
+   `channel='pos'`, `fulfillmentMethod='in_person'`, stock lines fulfilled immediately). Card tender uses
+   the same `charge()` + settle path (`com_ind` still `E` until Run confirms); cash/Venmo/check collapse
+   stage+settle into one transaction with `payments.reference` and `received_by`. Email/phone optional;
+   send a receipt when an email is given. Refactor `place-order.ts` so the shared pieces
+   (`stageOrder` internals, `settle`, `upsertCustomer`) are importable rather than duplicated.
+4. **Close session**: summary of tenders, expected cash = starting + cash sales − cash refunds, record
+   counted cash + notes.
+5. **Fulfillment page** (`admin/[orgSlug]/fulfillment`): paid orders grouped by classroom (teacher →
+   students) and by pickup event, bulk "mark delivered", printable view.
+6. **Non-card refunds** already work in `refundOrder` (no gateway call); confirm the refund dialog copy
+   for cash/Venmo.
+7. Commit after each step; update this file before stopping.
 
 ## Known issues / notes
 
@@ -75,8 +64,7 @@ Written but **not yet rendered or smoke-tested** (typecheck + lint pass):
 ## Pick-up prompt (paste this to resume)
 
 > Continue the Winthrop project in `/Users/mike/run-projects/winthrop`. Read `CLAUDE.md`, then
-> `docs/next-steps.md`, and follow its "Next session" list in order. Plan of record:
-> `~/.claude/plans/inventory-management-between-online-warm-valiant.md`. Start by running
-> `docker compose up -d db && pnpm dev`, log in via the console magic link, and smoke-test the admin
-> pages written last session before building the product form, inventory page, and settings page.
-> Commit after each numbered step and update `docs/next-steps.md` before stopping.
+> `docs/next-steps.md`, and follow its "Next session — Phase 2" list in order. Plan of record:
+> `~/.claude/plans/inventory-management-between-online-warm-valiant.md`. Start with
+> `docker compose up -d db && pnpm dev`; log in via the console magic link. Commit after each numbered
+> step, push to origin, and update `docs/next-steps.md` before stopping.
