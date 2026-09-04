@@ -22,7 +22,7 @@ import { audit } from '@/lib/audit';
 import { snapshotRuleForProduct } from '@/lib/allocation/rules';
 import { writeSaleAllocations } from '@/lib/allocation/entries';
 import type { RuleSnapshot } from '@/lib/allocation/types';
-import { commitStock, reserveStock } from '@/lib/inventory';
+import { commitStock, releaseStock, reserveStock } from '@/lib/inventory';
 import { resolveMoney } from '@/lib/pricing/resolve-price';
 import { computeTotals } from '@/lib/pricing/totals';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
@@ -200,6 +200,11 @@ async function stageOrder(tx: Tx, org: Org, cookieToken: string, input: PlaceOrd
       message: 'A payment for this cart is already in progress.',
     });
   }
+
+  // A retry after a decline: the previous attempt's pending order still holds this
+  // session's reservation. Release it and cancel that order before reserving again, so
+  // the shopper is never blocked by their own earlier attempt.
+  await supersedePendingOrders(tx, org.id, session.id);
 
   const items = await tx
     .select({ item: checkoutItems, variant: productVariants, product: products })
@@ -408,6 +413,45 @@ async function stageOrder(tx: Tx, org: Org, cookieToken: string, input: PlaceOrd
     })),
     customer: { name: input.customerName, email: input.customerEmail, phone: input.customerPhone },
   };
+}
+
+async function supersedePendingOrders(tx: Tx, orgId: string, sessionId: string): Promise<void> {
+  const pending = await tx
+    .select()
+    .from(orders)
+    .where(
+      and(eq(orders.orgId, orgId), eq(orders.checkoutSessionId, sessionId), eq(orders.status, 'pending'))
+    );
+  for (const o of pending) {
+    const blocking = await tx
+      .select({ id: payments.id })
+      .from(payments)
+      .where(and(eq(payments.orderId, o.id), inArray(payments.status, ['approved', 'unknown', 'pending'])))
+      .limit(1);
+    if (blocking.length) {
+      throw new StageError({
+        ok: false,
+        code: 'PAYMENT_UNCERTAIN',
+        message: 'A payment for this cart is still being confirmed.',
+      });
+    }
+    const lines = await tx.select().from(orderLines).where(eq(orderLines.orderId, o.id));
+    for (const l of lines) {
+      if (l.isPreorder) continue;
+      await releaseStock(tx, {
+        orgId,
+        variantId: l.variantId,
+        quantity: l.quantity,
+        referenceType: 'order',
+        referenceId: o.id,
+        note: 'superseded by retry',
+      });
+    }
+    await tx
+      .update(orders)
+      .set({ status: 'cancelled', notes: sql`coalesce(${orders.notes}, '') || ' [superseded by retry]'` })
+      .where(eq(orders.id, o.id));
+  }
 }
 
 async function settle(
