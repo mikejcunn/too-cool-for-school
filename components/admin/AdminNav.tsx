@@ -14,6 +14,7 @@ import {
   Clock,
   BarChart3,
   HandCoins,
+  ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const items = [
   { href: '/events', label: 'Events', icon: CalendarDays },
   { href: '/allocations', label: 'Allocations', icon: HandCoins },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/audit', label: 'Audit log', icon: ScrollText },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

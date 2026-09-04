@@ -88,26 +88,24 @@ d('pre-orders (db)', () => {
           customerEmail: 'a@example.com',
         })
         .returning();
-      await db
-        .insert(orderLines)
-        .values({
-          orgId,
-          orderId: o.id,
-          variantId,
-          productId: p.id,
-          sku: v.sku,
-          productName: 'Hoodie',
-          variantLabel: 'YM',
-          quantity: qty,
-          refundedQuantity: refunded,
-          unitPriceCents: 4000,
-          unitCogsCents: 1900,
-          lineSubtotalCents: 4000 * qty,
-          isPreorder: true,
-          preorderWindowId: windowId,
-          allocationBasis: 'margin',
-          allocationRuleSnapshot: {},
-        });
+      await db.insert(orderLines).values({
+        orgId,
+        orderId: o.id,
+        variantId,
+        productId: p.id,
+        sku: v.sku,
+        productName: 'Hoodie',
+        variantLabel: 'YM',
+        quantity: qty,
+        refundedQuantity: refunded,
+        unitPriceCents: 4000,
+        unitCogsCents: 1900,
+        lineSubtotalCents: 4000 * qty,
+        isPreorder: true,
+        preorderWindowId: windowId,
+        allocationBasis: 'margin',
+        allocationRuleSnapshot: {},
+      });
     }
   });
 

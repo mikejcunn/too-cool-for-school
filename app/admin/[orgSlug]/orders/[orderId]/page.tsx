@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { statusVariant } from '@/components/admin/OrdersTable';
 import { FulfilButton } from '@/components/admin/FulfilButton';
 import { RefundDialog } from '@/components/admin/RefundDialog';
+import { ResolvePaymentDialog } from '@/components/admin/ResolvePaymentDialog';
 
 export default async function OrderDetailPage({
   params,
@@ -167,6 +168,14 @@ export default async function OrderDetailPage({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
+                    {(p.status === 'unknown' || p.status === 'pending') && hasRole(role, 'admin') && (
+                      <ResolvePaymentDialog
+                        orgSlug={org.slug}
+                        orderId={order.id}
+                        paymentId={p.id}
+                        status={p.status}
+                      />
+                    )}
                     <Badge
                       variant={
                         p.status === 'approved'

@@ -5,7 +5,7 @@ end of every working session.
 
 ## Where we are
 
-**Phases 0–4 are built and pushed** (session 2, 2026-09-04). Repo: https://github.com/mikejcunn/too-cool-for-school.
+**Phases 0–5 are built and pushed** (session 2, 2026-09-04). Repo: https://github.com/mikejcunn/too-cool-for-school.
 
 Smoke-tested in the browser with the mock gateway: storefront checkout incl. decline + retry; admin
 dashboard/orders/order detail/mark fulfilled/partial refund/products edit/inventory receive/verify ledger;
@@ -18,23 +18,26 @@ item; events dialog; fulfillment bulk-mark + print; Adjust-stock dialog; setting
 new pre-order window dialog; create-PO / receive-PO pages; reports page + CSV; beneficiaries page.
 Resend not configured (emails logged as `skipped`).
 
-## Next session — Phase 5 (multi-tenant + hardening) and launch prep
+## Next session — launch prep and polish
 
-1. **Click through the untested list above**, fixing as you go.
-2. **Run webhook receiver** `app/api/webhooks/run/route.ts`: verify signature if Run provides one (check
-   `dev-docs/fern/docs/pages/guides/webhooks/overview.mdx`), dedupe on `metadata.idempotency_key` via
-   `webhook_events`, and resolve payments in `unknown` by matching `payload.order_id` (we send
-   `order_number`) / `trans_id`: approved → run the settle path; declined → mark declined and release.
-3. **Admin "Resolve payment"** on order detail for `unknown` payments (mark approved with trans_id, or
-   declined) — the human backstop; plus a cron `reconcile-pending-payments` that re-settles payments stuck
-   in `pending` with a stored `raw_response`.
-4. **Platform admin**: `/platform/orgs` (create org: name, slug, first admin email → membership), gated by
-   `users.is_platform_admin`.
-5. **Audit log UI** (`admin/[orgSlug]/audit`), **student-name purge** cron (null `student_name` on orders
-   fulfilled > 90 days ago), rate limit on `placeOrderAction` (per IP/session), Sentry.
-6. **Launch prep**: UAT credentials in `.env.local` → `pnpm db:seed` → one $1.23 charge to settle
-   `RUN_AMOUNT_UNITS`; Resend domain + `RESEND_API_KEY`; reCAPTCHA keys; Vercel project + Neon DB +
-   env vars + crons (`vercel.json`); real product photos (image URL field) and copy.
+Phase 5 shipped: Run webhook receiver (`/api/webhooks/run`, HMAC `X-Webhook-Signature-256`, dedupe via
+`webhook_events`), admin **Resolve payment** dialog for pending/unknown payments, `reconcile-pending-payments`
+cron, `/platform/orgs` (create a school with first admin), audit log page, `purge-student-names` cron.
+42 tests pass incl. resolvePayment approve/decline/duplicate-trans_id.
+
+1. **Click through what is still untested by hand**: POS card/Venmo/check tenders, POS sale with a pre-order
+   item, events dialog, fulfillment bulk-mark + print, Adjust-stock dialog, settings save, team member add,
+   new pre-order window dialog, create-PO / receive-PO pages, reports CSV, beneficiaries page, platform create
+   org, Resolve-payment dialog (use mock card ending `9999` at checkout to produce an `unknown` payment).
+2. **Launch prep**: UAT creds in `.env.local` → `pnpm db:seed` (or Settings page) → one $1.23 charge to settle
+   `RUN_AMOUNT_UNITS`; confirm the Runner.js iframe renders with the real public key; share
+   `/api/webhooks/run` + `RUN_WEBHOOK_SECRET` with Run; Resend domain + `RESEND_API_KEY` + `AUTH_RESEND_KEY`;
+   reCAPTCHA v3 keys; Vercel project + Neon DB + env vars + crons (`vercel.json`); `NEXT_PUBLIC_APP_URL`.
+3. **Content**: real product photos (image URL field; Vercel Blob upload is a nice-to-have), store copy,
+   classroom list for this school year, first pre-order window dates.
+4. **Nice-to-haves**: rate limit on `placeOrderAction`, Sentry, Postgres RLS behind `withOrg`, custom domain
+   middleware, Playwright e2e (`e2e/` is empty; config exists), student-name first-name-only on the admin
+   fulfillment print view.
 
 ## Known issues / notes
 
@@ -55,7 +58,7 @@ Resend not configured (emails logged as `skipped`).
 ## Pick-up prompt (paste this to resume)
 
 > Continue the Winthrop project in `/Users/mike/run-projects/winthrop`. Read `CLAUDE.md`, then
-> `docs/next-steps.md`, and follow its "Next session — Phase 5" list in order. Plan of record:
+> `docs/next-steps.md`, and follow its "Next session — launch prep" list in order. Plan of record:
 > `~/.claude/plans/inventory-management-between-online-warm-valiant.md`. Start with
 > `docker compose up -d db && pnpm dev`; log in via the console magic link. Commit after each numbered
 > step, push to origin, and update `docs/next-steps.md` before stopping.

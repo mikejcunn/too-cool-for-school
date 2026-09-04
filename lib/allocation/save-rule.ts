@@ -54,18 +54,16 @@ export async function saveAllocationRule(
         active: true,
       })
       .returning({ id: allocationRules.id });
-    await tx
-      .insert(allocationRuleSplits)
-      .values(
-        input.splits.map((s, i) => ({
-          ruleId: rule.id,
-          beneficiaryId: s.beneficiaryId,
-          kind: s.kind,
-          percentBps: s.kind === 'percent' ? (s.percentBps ?? 0) : null,
-          fixedCentsPerUnit: s.kind === 'fixed' ? (s.fixedCentsPerUnit ?? 0) : null,
-          position: i,
-        }))
-      );
+    await tx.insert(allocationRuleSplits).values(
+      input.splits.map((s, i) => ({
+        ruleId: rule.id,
+        beneficiaryId: s.beneficiaryId,
+        kind: s.kind,
+        percentBps: s.kind === 'percent' ? (s.percentBps ?? 0) : null,
+        fixedCentsPerUnit: s.kind === 'fixed' ? (s.fixedCentsPerUnit ?? 0) : null,
+        position: i,
+      }))
+    );
     await audit(tx, {
       orgId,
       actorUserId,
