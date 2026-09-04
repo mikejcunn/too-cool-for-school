@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ShoppingBag } from 'lucide-react';
 import { ReCaptchaProvider } from 'next-recaptcha-v3';
 import { requireOrg } from '@/lib/tenant/context';
+import { isDemo } from '@/lib/demo';
 import { loadCart } from '@/lib/checkout/cart';
 import { Badge } from '@/components/ui/badge';
 
@@ -15,7 +16,7 @@ export default async function StoreLayout({
   const { orgSlug } = await params;
   const org = await requireOrg(orgSlug);
   const cart = await loadCart(org.id);
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  const siteKey = isDemo() ? undefined : process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   const brand = org.brandColor ? ({ '--primary': org.brandColor } as React.CSSProperties) : undefined;
 
   const body = (

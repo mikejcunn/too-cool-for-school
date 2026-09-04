@@ -30,6 +30,7 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { charge, RunApiError } from '@/lib/run-api';
 import { toRunAmount } from '@/lib/run-api/amount';
 import { isApproved, type ChargeResponse } from '@/types/run';
+import { isDemo } from '@/lib/demo';
 import { releaseExpiredReservations } from './release-expired';
 import { nextOrderNumber } from './order-number';
 import { placeOrderInputSchema, type PlaceOrderResult } from './schemas';
@@ -125,7 +126,7 @@ export async function placeOrder(
 
 /** Shared engine. `session` is the checkout_sessions row whose items form the order. */
 export async function runCheckout(org: Org, session: Session, input: OrderInput): Promise<PlaceOrderResult> {
-  if (input.tender === 'card' && !org.runMid)
+  if (input.tender === 'card' && !org.runMid && !isDemo())
     return {
       ok: false,
       code: 'NOT_CONFIGURED',
@@ -162,7 +163,7 @@ export async function runCheckout(org: Org, session: Session, input: OrderInput)
   if (input.tender === 'card') {
     try {
       response = await charge({
-        mid: org.runMid!,
+        mid: org.runMid ?? 'DEMO',
         amount: toRunAmount(staged.totalCents),
         account_token: input.card!.accountToken,
         expiration: input.card!.expiration,

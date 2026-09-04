@@ -20,6 +20,9 @@ import {
 
 const ORG_SLUG = process.env.DEFAULT_ORG_SLUG || 'friends-of-winthrop';
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'mike@runpayments.io';
+const DEMO = process.env.DEMO_MODE === 'true' || process.env.RUN_MOCK_GATEWAY === 'true';
+const RUN_MID = process.env.SEED_RUN_MID || (DEMO ? 'DEMO' : null);
+const RUN_PUBLIC_KEY = process.env.SEED_RUN_PUBLIC_KEY || (DEMO ? 'demo-public-key' : null);
 
 async function main() {
   // ── Org ──────────────────────────────────────────────────────────────────
@@ -31,16 +34,16 @@ async function main() {
       shortName: 'FOW',
       contactEmail: 'friendsofwinthrop@example.org',
       brandColor: '#1d4ed8',
-      runMid: process.env.SEED_RUN_MID || null,
-      runPublicKey: process.env.SEED_RUN_PUBLIC_KEY || null,
+      runMid: RUN_MID,
+      runPublicKey: RUN_PUBLIC_KEY,
       orderPrefix: 'W',
     })
     .onConflictDoUpdate({
       target: organizations.slug,
       set: {
         name: 'Friends of Winthrop',
-        runMid: process.env.SEED_RUN_MID || null,
-        runPublicKey: process.env.SEED_RUN_PUBLIC_KEY || null,
+        runMid: RUN_MID,
+        runPublicKey: RUN_PUBLIC_KEY,
       },
     })
     .returning();

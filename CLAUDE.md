@@ -20,6 +20,12 @@ pnpm typecheck && pnpm lint
 
 Magic-link logins print to the dev server console when `AUTH_DEV_LOG_LINKS=true` and no Resend key is set.
 
+**Demo mode** (`DEMO_MODE=true` + `NEXT_PUBLIC_DEMO_MODE=true`, the default in `.env.example`): charges are
+simulated in `lib/run-api` (any card; ending `0000` declines, `9999` = network failure), reCAPTCHA is skipped,
+an amber banner shows on every page, and `/login` offers one-click admin sign-in (`lib/auth/demo-session.ts`).
+It is honoured in production builds on purpose so a hosted demo can never charge a card. Flip both to `false`
+and supply Run credentials for real payments.
+
 ## Non-negotiables
 
 1. **Money is integer cents.** Dollars exist only in `lib/money.ts` and `lib/run-api/amount.ts`.

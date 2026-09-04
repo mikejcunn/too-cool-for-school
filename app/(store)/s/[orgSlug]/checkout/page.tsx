@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { and, asc, eq, gte, inArray } from 'drizzle-orm';
 import { requireOrg } from '@/lib/tenant/context';
+import { isDemo } from '@/lib/demo';
 import { loadCart, pruneInactiveLines } from '@/lib/checkout/cart';
 import { computeTotals } from '@/lib/pricing/totals';
 import { db } from '@/lib/db';
@@ -67,10 +68,8 @@ export default async function CheckoutPage({ params }: { params: Promise<{ orgSl
         events={evs.map((e) => ({ id: e.id, label: `${e.name} · ${fmt(e.startsAt)}` }))}
         publicKey={org.runPublicKey}
         mid={org.runMid}
-        mockMode={
-          process.env.NEXT_PUBLIC_RUN_MOCK_GATEWAY === 'true' && process.env.NODE_ENV !== 'production'
-        }
-        recaptchaEnabled={!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+        mockMode={isDemo()}
+        recaptchaEnabled={!!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && !isDemo()}
       />
     </div>
   );

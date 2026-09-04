@@ -7,11 +7,14 @@ export interface RecaptchaResult {
   error?: string;
 }
 
+import { isDemo } from '@/lib/demo';
+
 export async function verifyRecaptchaToken(
   token: string,
   expectedAction: string,
   minScore = 0.5
 ): Promise<RecaptchaResult> {
+  if (isDemo()) return { success: true, score: 1 };
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {

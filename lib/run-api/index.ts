@@ -2,6 +2,7 @@
  * Adapted from run-payment-page/lib/run-api/index.ts: an always-on token, no
  * api_key refresh dance, plus void-or-refund and a hard request timeout. */
 import type { ChargeBody, ChargeResponse, VoidOrRefundBody, VoidOrRefundResponse } from '@/types/run';
+import { isDemo } from '@/lib/demo';
 
 const RUN_BASE = process.env.RUN_API_BASE_URL || 'https://javelin.runpayments.io/api/v1';
 const TIMEOUT_MS = Number(process.env.RUN_API_TIMEOUT_MS || 30_000);
@@ -63,11 +64,12 @@ export function voidOrRefund(body: VoidOrRefundBody): Promise<VoidOrRefundRespon
 }
 
 // ─── Dev-only mock gateway ─────────────────────────────────────────────────────
-// RUN_MOCK_GATEWAY=true (never honoured in production). Tokens starting with
+// DEMO_MODE=true (or RUN_MOCK_GATEWAY=true). Tokens starting with
 // "mock_decline" are declined; "mock_error" throws like a network failure; anything
 // else is approved. Lets local dev and e2e run without Run UAT credentials.
 export function mockEnabled(): boolean {
-  return process.env.RUN_MOCK_GATEWAY === 'true' && process.env.NODE_ENV !== 'production';
+  // DEMO_MODE deliberately works in production builds so a hosted demo never charges a card.
+  return isDemo();
 }
 
 async function mockCharge(body: ChargeBody): Promise<ChargeResponse> {

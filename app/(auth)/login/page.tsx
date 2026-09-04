@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { AuthError } from 'next-auth';
 import { auth, signIn } from '@/lib/auth';
+import { isDemo } from '@/lib/demo';
+import { createDemoSession } from '@/lib/auth/demo-session';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,6 +54,21 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             {error ? <p className="text-sm text-destructive">Sign-in failed ({error}). Try again.</p> : null}
             <Button type="submit">Email me a sign-in link</Button>
           </form>
+          {isDemo() && (
+            <form
+              className="mt-4 border-t pt-4"
+              action={async () => {
+                'use server';
+                const r = await createDemoSession();
+                if (r.ok) redirect('/admin');
+                redirect('/login?error=DemoDisabled');
+              }}
+            >
+              <Button type="submit" variant="outline" className="w-full">
+                Demo: sign in as admin (no email needed)
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </main>

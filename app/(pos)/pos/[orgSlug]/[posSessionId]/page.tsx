@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { and, asc, eq, gte, inArray } from 'drizzle-orm';
 import { requireMember } from '@/lib/tenant/context';
+import { isDemo } from '@/lib/demo';
 import { db } from '@/lib/db';
 import { classrooms, events, posSessions } from '@/lib/db/schema';
 import { listActiveProducts, preorderOpen } from '@/lib/catalog/queries';
@@ -71,7 +72,7 @@ export default async function PosSessionPage({
       events={evs.map((e) => ({ id: e.id, label: e.name }))}
       publicKey={org.runPublicKey}
       mid={org.runMid}
-      mockMode={process.env.NEXT_PUBLIC_RUN_MOCK_GATEWAY === 'true' && process.env.NODE_ENV !== 'production'}
+      mockMode={isDemo()}
       taxRateBps={org.taxRateBps}
     />
   );
